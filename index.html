@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kuis Komponen Komputer</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { font-family: 'Outfit', sans-serif; }
+
+    .page { display: none; opacity: 0; transition: opacity 0.5s ease; }
+    .page.active { display: flex; opacity: 1; }
+
+    /* Animated gradient background */
+    .bg-animated {
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      background-size: 400% 400%;
+      animation: gradShift 12s ease infinite;
+    }
+    @keyframes gradShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* Drop zone styling */
+    .drop-zone {
+      min-width: 160px;
+      min-height: 48px;
+      border: 2px dashed rgba(139, 92, 246, 0.6);
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.08);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      position: relative;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    .drop-zone::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4, #8b5cf6);
+      background-size: 200% 200%;
+      animation: borderGlow 3s ease infinite;
+      z-index: -1;
+      opacity: 0.5;
+    }
+    .drop-zone.drag-over {
+      border-color: #06b6d4;
+      background: rgba(6, 182, 212, 0.15);
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.3);
+    }
+    .drop-zone.filled {
+      border-style: solid;
+      border-color: #8b5cf6;
+      background: rgba(139, 92, 246, 0.15);
+    }
+    .drop-zone.correct {
+      border-color: #10b981 !important;
+      background: rgba(16, 185, 129, 0.15) !important;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+    }
+    .drop-zone.incorrect {
+      border-color: #ef4444 !important;
+      background: rgba(239, 68, 68, 0.15) !important;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+      animation: shake 0.5s ease;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    @keyframes borderGlow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* Draggable option cards */
+    .drag-card {
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(139, 92, 246, 0.4);
+      border-radius: 14px;
+      padding: 16px 28px;
+      cursor: grab;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .drag-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(6, 182, 212, 0.1));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .drag-card:hover::before { opacity: 1; }
+    .drag-card:hover {
+      border-color: #8b5cf6;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(139, 92, 246, 0.25);
+    }
+    .drag-card:active { cursor: grabbing; transform: scale(0.95); }
+    .drag-card.dragging { opacity: 0.4; transform: scale(0.9); }
+    .drag-card.used { opacity: 0.3; pointer-events: none; border-style: dashed; }
+
+    /* Floating particles */
+    .particle {
+      position: absolute;
+      width: 4px; height: 4px;
+      background: rgba(139, 92, 246, 0.4);
+      border-radius: 50%;
+      animation: float linear infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100%) rotate(360deg); opacity: 0; }
+    }
+
+    /* Number badge */
+    .num-badge {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 13px;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    /* Result celebration */
+    @keyframes celebrate {
+      0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+      50% { transform: scale(1.1) rotate(2deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .celebrate { animation: celebrate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+    .star-burst {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      animation: burst 1s ease-out forwards;
+    }
+    @keyframes burst {
+      0% { transform: translate(0,0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+    }
+
+    .sentence-line {
+      font-size: 1.1rem;
+      line-height: 2.8;
+      color: #e2e8f0;
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-animated text-white overflow-auto"><!-- PARTICLES -->
+  <div id="particles" class="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true"></div><!-- PAGE 1: INTRO -->
+  <div id="page-intro" class="page active flex-col items-center justify-center h-full px-6 relative z-10">
+   <div class="text-center max-w-lg">
+    <div class="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-400 shadow-lg shadow-violet-500/30"><i data-lucide="cpu" style="width:40px;height:40px;color:white"></i>
+    </div>
+    <h1 id="main-title" class="text-3xl md:text-4xl font-extrabold mb-3 bg-gradient-to-r from-violet-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">Kuis Komponen Komputer</h1>
+    <p class="text-slate-400 mb-8 text-lg">Seret jawaban yang benar ke kotak kosong pada kalimat!</p><button onclick="goToPage('page-quiz')" class="px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 transition-all shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-1 active:translate-y-0"> Mulai Kuis <i data-lucide="arrow-right" style="width:18px;height:18px;display:inline;vertical-align:middle;margin-left:6px"></i> </button>
+   </div>
+  </div><!-- PAGE 2: QUIZ -->
+  <div id="page-quiz" class="page flex-col h-full relative z-10">
+   <div class="flex-1 overflow-auto px-4 py-8 flex flex-col items-center">
+    <div class="w-full max-w-2xl"><!-- Header -->
+     <div class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 border border-violet-500/30 flex items-center justify-center"><i data-lucide="file-question" style="width:20px;height:20px;color:#a78bfa"></i>
+      </div>
+      <div>
+       <h2 class="font-bold text-lg text-white">Lengkapi Kalimat</h2>
+       <p class="text-slate-500 text-sm">Seret jawaban ke kotak yang sesuai</p>
+      </div>
+     </div><!-- Sentence with blanks -->
+     <div class="bg-white/5 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/10 mb-8">
+      <p class="sentence-line">Dalam sistem komputer, <span class="inline-flex items-center gap-1.5 mx-1 align-middle"><span class="num-badge">1</span></span> <span class="drop-zone" id="zone-1" data-answer="CPU" data-index="1"> <span class="text-violet-400/50 text-sm font-medium zone-placeholder">Seret ke sini</span> <span class="zone-answer hidden font-semibold text-violet-200 text-sm"></span> </span> berfungsi sebagai otak komputer yang memproses data, <span class="inline-flex items-center gap-1.5 mx-1 align-middle"><span class="num-badge">2</span></span> <span class="drop-zone" id="zone-2" data-answer="RAM" data-index="2"> <span class="text-violet-400/50 text-sm font-medium zone-placeholder">Seret ke sini</span> <span class="zone-answer hidden font-semibold text-violet-200 text-sm"></span> </span> digunakan untuk menyimpan data sementara saat komputer bekerja, dan <span class="inline-flex items-center gap-1.5 mx-1 align-middle"><span class="num-badge">3</span></span> <span class="drop-zone" id="zone-3" data-answer="Harddisk / SSD" data-index="3"> <span class="text-violet-400/50 text-sm font-medium zone-placeholder">Seret ke sini</span> <span class="zone-answer hidden font-semibold text-violet-200 text-sm"></span> </span> berfungsi sebagai media penyimpanan permanen.</p>
+     </div><!-- Draggable Options -->
+     <div class="mb-4 flex items-center gap-2"><i data-lucide="grip-vertical" style="width:16px;height:16px;color:#64748b"></i> <span class="text-slate-500 text-sm font-medium">Pilihan Jawaban</span>
+     </div>
+     <div id="options-container" class="flex flex-wrap gap-4 justify-center mb-8">
+      <div class="drag-card" draggable="true" data-value="CPU">
+       <div class="relative z-10 flex items-center gap-3"><i data-lucide="cpu" style="width:22px;height:22px;color:#a78bfa"></i> <span class="font-semibold text-white tracking-wide">CPU</span>
+       </div>
+      </div>
+      <div class="drag-card" draggable="true" data-value="RAM">
+       <div class="relative z-10 flex items-center gap-3"><i data-lucide="memory-stick" style="width:22px;height:22px;color:#22d3ee"></i> <span class="font-semibold text-white tracking-wide">RAM</span>
+       </div>
+      </div>
+      <div class="drag-card" draggable="true" data-value="Harddisk / SSD">
+       <div class="relative z-10 flex items-center gap-3"><i data-lucide="hard-drive" style="width:22px;height:22px;color:#f472b6"></i> <span class="font-semibold text-white tracking-wide">Harddisk / SSD</span>
+       </div>
+      </div>
+     </div><!-- Check Button -->
+     <div class="flex justify-center"><button id="btn-check" onclick="checkAnswers()" disabled class="px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-violet-600/40 to-cyan-500/40 cursor-not-allowed transition-all"> <i data-lucide="check-circle" style="width:18px;height:18px;display:inline;vertical-align:middle;margin-right:6px"></i> Periksa Jawaban </button>
+     </div>
+    </div>
+   </div>
+  </div><!-- PAGE 3: RESULT -->
+  <div id="page-result" class="page flex-col items-center justify-center h-full px-6 relative z-10">
+   <div id="result-box" class="text-center max-w-md">
+    <div id="result-icon" class="mb-6 inline-flex items-center justify-center w-24 h-24 rounded-3xl shadow-2xl relative"></div>
+    <h2 id="result-title" class="text-3xl font-extrabold mb-2"></h2>
+    <p id="result-desc" class="text-slate-400 mb-3 text-lg"></p>
+    <p id="result-score" class="text-5xl font-extrabold mb-8 bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent"></p>
+    <div class="flex gap-3 justify-center flex-wrap"><button onclick="resetQuiz()" class="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-violet-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 transition-all shadow-lg hover:-translate-y-1"> <i data-lucide="rotate-ccw" style="width:16px;height:16px;display:inline;vertical-align:middle;margin-right:4px"></i> Coba Lagi </button>
+    </div>
+   </div>
+  </div>
+  <script>
+  // --- Config & SDK ---
+  const defaultConfig = {
+    quiz_title: 'Kuis Komponen Komputer',
+    background_color: '#0f0c29',
+    surface_color: '#1e1b4b',
+    text_color: '#e2e8f0',
+    primary_action_color: '#8b5cf6',
+    secondary_action_color: '#06b6d4',
+    font_family: 'Outfit',
+    font_size: 16
+  };
+
+  function applyConfig(c) {
+    const t = c.quiz_title || defaultConfig.quiz_title;
+    const el = document.getElementById('main-title');
+    if (el) el.textContent = t;
+
+    const font = (c.font_family || defaultConfig.font_family);
+    document.body.style.fontFamily = `${font}, sans-serif`;
+
+    const base = c.font_size || defaultConfig.font_size;
+    document.querySelectorAll('.sentence-line').forEach(s => s.style.fontSize = `${base * 1.1}px`);
+  }
+
+  window.elementSdk.init({
+    defaultConfig,
+    onConfigChange: async (c) => applyConfig(c),
+    mapToCapabilities: (c) => ({
+      recolorables: [
+        { get: () => c.background_color || defaultConfig.background_color, set: v => { c.background_color = v; window.elementSdk.setConfig({ background_color: v }); }},
+        { get: () => c.surface_color || defaultConfig.surface_color, set: v => { c.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); }},
+        { get: () => c.text_color || defaultConfig.text_color, set: v => { c.text_color = v; window.elementSdk.setConfig({ text_color: v }); }},
+        { get: () => c.primary_action_color || defaultConfig.primary_action_color, set: v => { c.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); }},
+        { get: () => c.secondary_action_color || defaultConfig.secondary_action_color, set: v => { c.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); }}
+      ],
+      borderables: [],
+      fontEditable: { get: () => c.font_family || defaultConfig.font_family, set: v => { c.font_family = v; window.elementSdk.setConfig({ font_family: v }); }},
+      fontSizeable: { get: () => c.font_size || defaultConfig.font_size, set: v => { c.font_size = v; window.elementSdk.setConfig({ font_size: v }); }}
+    }),
+    mapToEditPanelValues: (c) => new Map([['quiz_title', c.quiz_title || defaultConfig.quiz_title]])
+  });
+
+  // --- Particles ---
+  (function initParticles() {
+    const cont = document.getElementById('particles');
+    for (let i = 0; i < 20; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.top = (60 + Math.random() * 40) + '%';
+      p.style.animationDuration = (6 + Math.random() * 10) + 's';
+      p.style.animationDelay = Math.random() * 8 + 's';
+      p.style.width = p.style.height = (2 + Math.random() * 4) + 'px';
+      cont.appendChild(p);
+    }
+  })();
+
+  // --- Navigation ---
+  function goToPage(id) {
+    document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); });
+    setTimeout(() => { document.getElementById(id).classList.add('active'); }, 50);
+  }
+
+  // --- Drag & Drop ---
+  let filledZones = {};
+  const zones = document.querySelectorAll('.drop-zone');
+  const cards = document.querySelectorAll('.drag-card');
+
+  cards.forEach(card => {
+    card.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', card.dataset.value);
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+
+    // Touch support
+    card.addEventListener('touchstart', handleTouchStart, { passive: false });
+    card.addEventListener('touchmove', handleTouchMove, { passive: false });
+    card.addEventListener('touchend', handleTouchEnd);
+  });
+
+  let touchCard = null, touchClone = null;
+  function handleTouchStart(e) {
+    touchCard = e.currentTarget;
+    if (touchCard.classList.contains('used')) return;
+    e.preventDefault();
+    touchClone = touchCard.cloneNode(true);
+    touchClone.style.position = 'fixed';
+    touchClone.style.zIndex = '9999';
+    touchClone.style.pointerEvents = 'none';
+    touchClone.style.opacity = '0.85';
+    touchClone.style.width = touchCard.offsetWidth + 'px';
+    document.body.appendChild(touchClone);
+    moveTouchClone(e);
+    touchCard.classList.add('dragging');
+  }
+  function handleTouchMove(e) {
+    if (!touchClone) return;
+    e.preventDefault();
+    moveTouchClone(e);
+    zones.forEach(z => {
+      const r = z.getBoundingClientRect();
+      const t = e.touches[0];
+      z.classList.toggle('drag-over', t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom);
+    });
+  }
+  function handleTouchEnd(e) {
+    if (!touchClone || !touchCard) return;
+    touchCard.classList.remove('dragging');
+    const touch = e.changedTouches[0];
+    zones.forEach(z => {
+      z.classList.remove('drag-over');
+      const r = z.getBoundingClientRect();
+      if (touch.clientX >= r.left && touch.clientX <= r.right && touch.clientY >= r.top && touch.clientY <= r.bottom) {
+        placeAnswer(z, touchCard.dataset.value);
+      }
+    });
+    touchClone.remove();
+    touchClone = null;
+    touchCard = null;
+  }
+  function moveTouchClone(e) {
+    const t = e.touches[0];
+    touchClone.style.left = (t.clientX - touchClone.offsetWidth / 2) + 'px';
+    touchClone.style.top = (t.clientY - 40) + 'px';
+  }
+
+  zones.forEach(zone => {
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      placeAnswer(zone, e.dataTransfer.getData('text/plain'));
+    });
+    // Click to remove
+    zone.addEventListener('click', () => {
+      const idx = zone.dataset.index;
+      if (filledZones[idx]) {
+        const val = filledZones[idx];
+        delete filledZones[idx];
+        zone.classList.remove('filled', 'correct', 'incorrect');
+        zone.querySelector('.zone-placeholder').classList.remove('hidden');
+        zone.querySelector('.zone-answer').classList.add('hidden');
+        cards.forEach(c => { if (c.dataset.value === val) c.classList.remove('used'); });
+        updateCheckBtn();
+      }
+    });
+  });
+
+  function placeAnswer(zone, value) {
+    const idx = zone.dataset.index;
+    // If zone already has answer, release old card
+    if (filledZones[idx]) {
+      const old = filledZones[idx];
+      cards.forEach(c => { if (c.dataset.value === old) c.classList.remove('used'); });
+    }
+    filledZones[idx] = value;
+    zone.classList.add('filled');
+    zone.querySelector('.zone-placeholder').classList.add('hidden');
+    const ans = zone.querySelector('.zone-answer');
+    ans.textContent = value;
+    ans.classList.remove('hidden');
+    cards.forEach(c => { if (c.dataset.value === value) c.classList.add('used'); });
+    updateCheckBtn();
+  }
+
+  function updateCheckBtn() {
+    const btn = document.getElementById('btn-check');
+    const allFilled = Object.keys(filledZones).length === 3;
+    btn.disabled = !allFilled;
+    if (allFilled) {
+      btn.classList.remove('from-violet-600/40', 'to-cyan-500/40', 'cursor-not-allowed');
+      btn.classList.add('from-violet-600', 'to-cyan-500', 'hover:from-violet-500', 'hover:to-cyan-400', 'shadow-lg', 'shadow-violet-500/25', 'hover:-translate-y-1');
+    } else {
+      btn.classList.add('from-violet-600/40', 'to-cyan-500/40', 'cursor-not-allowed');
+      btn.classList.remove('from-violet-600', 'to-cyan-500', 'hover:from-violet-500', 'hover:to-cyan-400', 'shadow-lg', 'shadow-violet-500/25', 'hover:-translate-y-1');
+    }
+  }
+
+  function checkAnswers() {
+    let score = 0;
+    zones.forEach(z => {
+      const correct = z.dataset.answer === filledZones[z.dataset.index];
+      z.classList.remove('correct', 'incorrect');
+      z.classList.add(correct ? 'correct' : 'incorrect');
+      if (correct) score++;
+    });
+
+    setTimeout(() => {
+      showResult(score);
+      goToPage('page-result');
+    }, 1200);
+  }
+
+  function showResult(score) {
+    const box = document.getElementById('result-box');
+    box.classList.remove('celebrate');
+    void box.offsetWidth;
+    box.classList.add('celebrate');
+
+    const icon = document.getElementById('result-icon');
+    const perfect = score === 3;
+    icon.className = 'mb-6 inline-flex items-center justify-center w-24 h-24 rounded-3xl shadow-2xl relative';
+    icon.style.background = perfect ? 'linear-gradient(135deg, #10b981, #06b6d4)' : 'linear-gradient(135deg, #f59e0b, #ef4444)';
+    icon.innerHTML = perfect
+      ? '<i data-lucide="trophy" style="width:48px;height:48px;color:white"></i>'
+      : '<i data-lucide="target" style="width:48px;height:48px;color:white"></i>';
+
+    document.getElementById('result-title').textContent = perfect ? 'Sempurna! 🎉' : 'Hampir Benar!';
+    document.getElementById('result-desc').textContent = perfect ? 'Kamu menguasai komponen komputer!' : 'Yuk coba lagi untuk hasil yang lebih baik!';
+    document.getElementById('result-score').textContent = `${score} / 3`;
+
+    if (perfect) spawnBurst(icon);
+    lucide.createIcons();
+  }
+
+  function spawnBurst(el) {
+    const colors = ['#8b5cf6','#06b6d4','#10b981','#f59e0b','#f472b6'];
+    for (let i = 0; i < 12; i++) {
+      const s = document.createElement('div');
+      s.className = 'star-burst';
+      const angle = (i / 12) * Math.PI * 2;
+      const dist = 60 + Math.random() * 40;
+      s.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+      s.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+      s.style.background = colors[i % colors.length];
+      s.style.left = '50%'; s.style.top = '50%';
+      el.appendChild(s);
+      setTimeout(() => s.remove(), 1000);
+    }
+  }
+
+  function resetQuiz() {
+    filledZones = {};
+    zones.forEach(z => {
+      z.classList.remove('filled', 'correct', 'incorrect');
+      z.querySelector('.zone-placeholder').classList.remove('hidden');
+      z.querySelector('.zone-answer').classList.add('hidden');
+    });
+    cards.forEach(c => c.classList.remove('used'));
+    updateCheckBtn();
+    goToPage('page-quiz');
+  }
+
+  lucide.createIcons();
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f40aeb2e03b91b7',t:'MTc3NzQ5MDYxOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
