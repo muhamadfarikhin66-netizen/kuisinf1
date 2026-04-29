@@ -8,80 +8,113 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-body { font-family: sans-serif; background:#0f0c29; color:white; text-align:center; padding:20px; }
+body {
+  font-family: sans-serif;
+  background: linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+  color:white;
+  text-align:center;
+  padding:20px;
+}
+
 .drop-zone {
-  display:inline-block;
-  min-width:150px;
-  padding:10px;
+  min-width:140px;
+  min-height:40px;
   border:2px dashed #8b5cf6;
   border-radius:10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   margin:5px;
 }
+
 .drag-card {
-  display:inline-block;
   padding:10px 20px;
   border:2px solid #8b5cf6;
   border-radius:10px;
   margin:10px;
   cursor:grab;
 }
-.correct { border-color:green; }
-.incorrect { border-color:red; }
+
+.correct { border-color:#10b981; }
+.incorrect { border-color:#ef4444; }
+
+button {
+  padding:10px 20px;
+  border-radius:10px;
+  background:#8b5cf6;
+  margin-top:20px;
+}
 </style>
 </head>
 
 <body>
 
-<h1>Kuis Komponen Komputer</h1>
-<p>Drag jawaban ke tempat yang benar</p>
+<h1 class="text-2xl font-bold mb-4">Kuis Komponen Komputer</h1>
 
-<p>
+<p class="mb-6">
 Dalam sistem komputer,
-<span class="drop-zone" data-answer="CPU" id="z1">?</span>
+<span class="drop-zone" data-answer="CPU" data-index="1"></span>
 adalah otak komputer,
-<span class="drop-zone" data-answer="RAM" id="z2">?</span>
+<span class="drop-zone" data-answer="RAM" data-index="2"></span>
 untuk penyimpanan sementara,
 dan
-<span class="drop-zone" data-answer="Harddisk / SSD" id="z3">?</span>
+<span class="drop-zone" data-answer="Harddisk / SSD" data-index="3"></span>
 untuk penyimpanan permanen.
 </p>
 
 <div>
-<div class="drag-card" draggable="true">CPU</div>
-<div class="drag-card" draggable="true">RAM</div>
-<div class="drag-card" draggable="true">Harddisk / SSD</div>
+<div class="drag-card" draggable="true" data-value="CPU">CPU</div>
+<div class="drag-card" draggable="true" data-value="RAM">RAM</div>
+<div class="drag-card" draggable="true" data-value="Harddisk / SSD">Harddisk / SSD</div>
 </div>
 
-<br>
-<button onclick="cek()">Cek Jawaban</button>
+<button onclick="checkAnswers()" id="btn">Cek Jawaban</button>
 
 <script>
-let dragged = "";
+let filled = {};
 
-document.querySelectorAll('.drag-card').forEach(el=>{
-  el.addEventListener('dragstart', e=>{
-    dragged = el.innerText;
+const cards = document.querySelectorAll('.drag-card');
+const zones = document.querySelectorAll('.drop-zone');
+
+cards.forEach(card=>{
+  card.addEventListener('dragstart', e=>{
+    e.dataTransfer.setData("text", card.dataset.value);
   });
 });
 
-document.querySelectorAll('.drop-zone').forEach(zone=>{
-  zone.addEventListener('dragover', e=>e.preventDefault());
+zones.forEach(zone=>{
+  zone.addEventListener('dragover', e=>{
+    e.preventDefault();
+  });
 
   zone.addEventListener('drop', e=>{
-    zone.innerText = dragged;
+    e.preventDefault();
+
+    let value = e.dataTransfer.getData("text");
+    let index = zone.dataset.index;
+
+    zone.innerText = value;
+    filled[index] = value;
   });
 });
 
-function cek(){
-  document.querySelectorAll('.drop-zone').forEach(z=>{
-    if(z.innerText === z.dataset.answer){
+function checkAnswers(){
+  let score = 0;
+
+  zones.forEach(z=>{
+    let correct = z.dataset.answer === filled[z.dataset.index];
+
+    z.classList.remove('correct','incorrect');
+
+    if(correct){
       z.classList.add('correct');
-      z.classList.remove('incorrect');
+      score++;
     } else {
       z.classList.add('incorrect');
-      z.classList.remove('correct');
     }
   });
+
+  alert("Skor: " + score + " / 3");
 }
 </script>
 
