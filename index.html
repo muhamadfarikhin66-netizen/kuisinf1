@@ -3,63 +3,95 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kuis Komponen Komputer</title>
+<title>Kuis Komputer</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body {
-  font-family: sans-serif;
+  font-family: 'Segoe UI', sans-serif;
   background: linear-gradient(135deg,#0f0c29,#302b63,#24243e);
   color:white;
-  text-align:center;
-  padding:20px;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
+/* container */
+.card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  padding:30px;
+  border-radius:20px;
+  box-shadow:0 10px 40px rgba(0,0,0,0.3);
+  max-width:700px;
+  text-align:center;
+}
+
+/* drop */
 .drop-zone {
-  min-width:140px;
-  min-height:40px;
+  min-width:150px;
+  min-height:45px;
   border:2px dashed #8b5cf6;
-  border-radius:10px;
+  border-radius:12px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   margin:5px;
+  transition:0.3s;
 }
 
+.drop-zone:hover {
+  background:rgba(139,92,246,0.1);
+}
+
+/* drag */
 .drag-card {
-  padding:10px 20px;
+  padding:12px 25px;
+  border-radius:12px;
   border:2px solid #8b5cf6;
-  border-radius:10px;
   margin:10px;
   cursor:grab;
+  transition:0.3s;
 }
 
-.correct { border-color:#10b981; }
-.incorrect { border-color:#ef4444; }
+.drag-card:hover {
+  transform:translateY(-5px);
+  box-shadow:0 10px 20px rgba(139,92,246,0.3);
+}
 
+/* result */
+.correct { border-color:#10b981 !important; }
+.incorrect { border-color:#ef4444 !important; }
+
+/* button */
 button {
-  padding:10px 20px;
-  border-radius:10px;
-  background:#8b5cf6;
   margin-top:20px;
+  padding:12px 25px;
+  border-radius:12px;
+  background:linear-gradient(135deg,#8b5cf6,#06b6d4);
+  font-weight:bold;
 }
 </style>
+
 </head>
 
 <body>
 
+<div class="card">
+
 <h1 class="text-2xl font-bold mb-4">Kuis Komponen Komputer</h1>
 
-<p class="mb-6">
+<p class="mb-6 leading-relaxed">
 Dalam sistem komputer,
 <span class="drop-zone" data-answer="CPU" data-index="1"></span>
-adalah otak komputer,
+berfungsi sebagai otak komputer,
 <span class="drop-zone" data-answer="RAM" data-index="2"></span>
-untuk penyimpanan sementara,
+digunakan untuk penyimpanan sementara,
 dan
 <span class="drop-zone" data-answer="Harddisk / SSD" data-index="3"></span>
-untuk penyimpanan permanen.
+sebagai penyimpanan permanen.
 </p>
 
 <div>
@@ -68,7 +100,9 @@ untuk penyimpanan permanen.
 <div class="drag-card" draggable="true" data-value="Harddisk / SSD">Harddisk / SSD</div>
 </div>
 
-<button onclick="checkAnswers()" id="btn">Cek Jawaban</button>
+<button onclick="checkAnswers()">Cek Jawaban</button>
+
+</div>
 
 <script>
 let filled = {};
@@ -83,9 +117,7 @@ cards.forEach(card=>{
 });
 
 zones.forEach(zone=>{
-  zone.addEventListener('dragover', e=>{
-    e.preventDefault();
-  });
+  zone.addEventListener('dragover', e=> e.preventDefault());
 
   zone.addEventListener('drop', e=>{
     e.preventDefault();
